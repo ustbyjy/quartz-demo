@@ -6,13 +6,13 @@ import org.quartz.JobListener;
 
 /**
  * Created with IntelliJ IDEA.
- * Description:
+ * Description: job相关的事件包括：job即将执行的通知以及job执行完毕的通知。
  * User: Administrator
  * Date: 2016-12-07
  * Time: 17:28
  */
-public class HelloJobListener implements JobListener {
-    public static final String LISTENER_NAME = "dummyJobListenerName";
+public class MyJobListener implements JobListener {
+    public static final String LISTENER_NAME = "MyJobListener";
 
     public String getName() {
         return LISTENER_NAME;
@@ -22,12 +22,10 @@ public class HelloJobListener implements JobListener {
         String jobName = jobExecutionContext.getJobDetail().getKey().toString();
         System.out.println("jobToBeExecuted");
         System.out.println("Job : " + jobName + " is going to start...");
-
     }
 
     public void jobExecutionVetoed(JobExecutionContext jobExecutionContext) {
         System.out.println("jobExecutionVetoed");
-
     }
 
     public void jobWasExecuted(JobExecutionContext jobExecutionContext, JobExecutionException e) {
@@ -36,7 +34,7 @@ public class HelloJobListener implements JobListener {
         String jobName = jobExecutionContext.getJobDetail().getKey().toString();
         System.out.println("Job : " + jobName + " is finished...");
 
-        if (!"".equals(e.getMessage())) {
+        if (e != null && !"".equals(e.getMessage())) {
             System.out.println("Exception thrown by: " + jobName
                     + " Exception: " + e.getMessage());
         }

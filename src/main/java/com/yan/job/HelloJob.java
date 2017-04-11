@@ -31,9 +31,6 @@ public class HelloJob implements Job {
         Trigger trigger = jobExecutionContext.getTrigger();
         JobDetail jobDetail = jobExecutionContext.getJobDetail();
 
-        logger.error("trigger", trigger.getKey());
-        logger.error("jobDetail", jobDetail.getKey());
-
         System.out.println("Hello Quartz!!!!!!");
 
         // Throw exception for testing
