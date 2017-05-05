@@ -6,7 +6,10 @@ import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.calendar.HolidayCalendar;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 
 /**
@@ -24,9 +27,10 @@ public class QuartzTest {
             scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();
 
-            testSimpleTrigger();
+//            testSimpleTrigger();
 //            testJobDataMap();
 //            testCalendar();
+            testSimpleTriggerAndCronTrigger();
         } catch (SchedulerException e) {
             e.printStackTrace();
         }
@@ -59,13 +63,30 @@ public class QuartzTest {
      */
     private static void testCronTrigger() throws SchedulerException {
         JobDetail job = JobBuilder.newJob(HelloJob.class).withIdentity("helloJob", "group1").build();
-        Trigger simpleTrigger = TriggerBuilder.newTrigger()
+        Trigger cronTrigger = TriggerBuilder.newTrigger()
                 .withIdentity("cronTrigger", "group1")
 //                .withSchedule(CronScheduleBuilder.cronSchedule("0/5 * * * * ?")) // 每5秒执行一次
 //                .withSchedule(CronScheduleBuilder.cronSchedule("0 0/2 8-17 * * ?")) // 每天的上午8点到下午5点之间每隔2分钟执行一次
                 .withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(10, 42).withMisfireHandlingInstructionFireAndProceed()) // 每天上午10:42执行，设置错发策略为立即触发
                 .build();
-        scheduler.scheduleJob(job, simpleTrigger);
+        scheduler.scheduleJob(job, cronTrigger);
+    }
+
+    private static void testSimpleTriggerAndCronTrigger() throws SchedulerException {
+        JobDetail job = JobBuilder.newJob(HelloJob.class).withIdentity("helloJob", "group1").build();
+        Trigger cronTrigger = TriggerBuilder.newTrigger()
+                .withIdentity("cronTrigger", "group1")
+                .withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 ? * FRI,SAT *"))
+                .build();
+        Trigger simpleTrigger = TriggerBuilder.newTrigger()
+                .withIdentity("simpleTrigger", "group1")
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(5).repeatForever())
+                .startAt(DateBuilder.dateOf(8, 0, 0))
+                .endAt(DateBuilder.dateOf(20, 0, 0))
+                .build();
+
+        Set<Trigger> triggers = new HashSet<Trigger>(Arrays.asList(cronTrigger, simpleTrigger));
+        scheduler.scheduleJob(job, triggers, true);
     }
 
     private static void testJobDataMap() throws SchedulerException {
