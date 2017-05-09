@@ -6,10 +6,8 @@ import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.calendar.HolidayCalendar;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.Calendar;
 
 
 /**
@@ -22,7 +20,7 @@ import java.util.Set;
 public class QuartzTest {
     private static Scheduler scheduler;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         try {
             scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();
@@ -72,21 +70,60 @@ public class QuartzTest {
         scheduler.scheduleJob(job, cronTrigger);
     }
 
-    private static void testSimpleTriggerAndCronTrigger() throws SchedulerException {
+    private static void testSimpleTriggerAndCronTrigger() throws SchedulerException, InterruptedException {
         JobDetail job = JobBuilder.newJob(HelloJob.class).withIdentity("helloJob", "group1").build();
         Trigger cronTrigger = TriggerBuilder.newTrigger()
                 .withIdentity("cronTrigger", "group1")
-                .withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 ? * FRI,SAT *"))
+                .withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 1/1 * ? *"))
                 .build();
+
         Trigger simpleTrigger = TriggerBuilder.newTrigger()
                 .withIdentity("simpleTrigger", "group1")
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(5).repeatForever())
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(2).repeatForever())
                 .startAt(DateBuilder.dateOf(8, 0, 0))
                 .endAt(DateBuilder.dateOf(20, 0, 0))
                 .build();
 
         Set<Trigger> triggers = new HashSet<Trigger>(Arrays.asList(cronTrigger, simpleTrigger));
         scheduler.scheduleJob(job, triggers, true);
+
+        Thread.sleep(10000);
+        System.out.println("重新规划中...");
+
+        Date startDate = simpleTrigger.getStartTime();
+        Date endDate = simpleTrigger.getEndTime();
+        java.util.Calendar startCalendar = Calendar.getInstance();
+        java.util.Calendar endCalendar = Calendar.getInstance();
+        startCalendar.setTime(startDate);
+        endCalendar.setTime(endDate);
+        startCalendar.add(Calendar.DAY_OF_YEAR, 1);
+        endCalendar.add(Calendar.DAY_OF_YEAR, 1);
+
+        Trigger newSimpleTrigger = TriggerBuilder.newTrigger()
+                .withIdentity("simpleTrigger", "group1")
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(2).repeatForever())
+                .startAt(startCalendar.getTime())
+                .endAt(endCalendar.getTime())
+                .build();
+
+        scheduler.rescheduleJob(simpleTrigger.getKey(), newSimpleTrigger);
+        System.out.println("规划成功...");
+
+        Thread.sleep(10000);
+        System.out.println("重新规划中...");
+
+        startCalendar.add(Calendar.DAY_OF_YEAR, -1);
+        endCalendar.add(Calendar.DAY_OF_YEAR, -1);
+
+        Trigger newSimpleTrigger2 = TriggerBuilder.newTrigger()
+                .withIdentity("simpleTrigger", "group1")
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(2).repeatForever())
+                .startAt(startCalendar.getTime())
+                .endAt(endCalendar.getTime())
+                .build();
+
+        scheduler.rescheduleJob(newSimpleTrigger.getKey(), newSimpleTrigger2);
+        System.out.println("规划成功...");
     }
 
     private static void testJobDataMap() throws SchedulerException {

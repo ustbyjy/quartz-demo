@@ -4,6 +4,8 @@ import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
+
 /**
  * Created with IntelliJ IDEA.
  * Description:
@@ -31,7 +33,7 @@ public class HelloJob implements Job {
         Trigger trigger = jobExecutionContext.getTrigger();
         JobDetail jobDetail = jobExecutionContext.getJobDetail();
 
-        System.out.println("Hello Quartz!!!!!!");
+        System.out.println(new Date() + " Hello Quartz!!!!!!");
 
         // Throw exception for testing
 //        throw new JobExecutionException("Testing Exception");
