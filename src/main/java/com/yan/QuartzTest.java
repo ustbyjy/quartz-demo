@@ -6,8 +6,10 @@ import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.calendar.HolidayCalendar;
 
-import java.util.*;
-import java.util.Calendar;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 
 /**
@@ -25,24 +27,32 @@ public class QuartzTest {
             scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();
 
-//            testSimpleTrigger();
+            testSimpleTrigger();
 //            testJobDataMap();
 //            testCalendar();
-            testSimpleTriggerAndCronTrigger();
+//            testSimpleTriggerAndCronTrigger();
         } catch (SchedulerException e) {
             e.printStackTrace();
         }
     }
 
     private static void testSimpleTrigger() throws SchedulerException {
+        Date startDate = DateBuilder.dateOf(8, 0, 0);
+        Date endDate = DateBuilder.dateOf(22, 0, 0);
+        JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put("type", 2);
+        jobDataMap.put("startDate", startDate);
+        jobDataMap.put("endDate", endDate);
         JobDetail job = JobBuilder.newJob(HelloJob.class).withIdentity("helloJob", "group1").build();
         Trigger simpleTrigger = TriggerBuilder.newTrigger()
                 .withIdentity("simpleTrigger", "group1")
+                .usingJobData(jobDataMap)
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(3).withRepeatCount(5)).startAt(startDate).endAt(endDate)
 //                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(5).repeatForever()) // 每隔5秒执行一次，永久重复
 //                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(3).withRepeatCount(2)) // 每隔3秒执行一次，重复两次，即总共执行3次
 //                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(5).repeatForever()).endAt(DateBuilder.dateOf(10, 43, 0)) // 立即触发，每5秒执行一次，直到10:43
 //                .startAt(DateBuilder.futureDate(5, DateBuilder.IntervalUnit.SECOND)) // 5秒后出发，仅执行一次
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInHours(2).repeatForever()).startAt(DateBuilder.evenHourDate(null)) // 在下一小时整点触发，每个2小时执行一次，一直重复
+//                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInHours(2).repeatForever()).startAt(DateBuilder.evenHourDate(null)) // 在下一小时整点触发，每个2小时执行一次，一直重复
                 .build();
         scheduler.scheduleJob(job, simpleTrigger);
     }
@@ -71,17 +81,19 @@ public class QuartzTest {
     }
 
     private static void testSimpleTriggerAndCronTrigger() throws SchedulerException, InterruptedException {
-        JobDetail job = JobBuilder.newJob(HelloJob.class).withIdentity("helloJob", "group1").build();
+        JobDetail job = JobBuilder.newJob(HelloJob.class)
+                .withIdentity("helloJob", "group1")
+                .build();
         Trigger cronTrigger = TriggerBuilder.newTrigger()
                 .withIdentity("cronTrigger", "group1")
-                .withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 1/1 * ? *"))
+                .withSchedule(CronScheduleBuilder.cronSchedule("0 0 0 ? * MON,TUE,WED,THU,FRI *"))
                 .build();
 
         Trigger simpleTrigger = TriggerBuilder.newTrigger()
                 .withIdentity("simpleTrigger", "group1")
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(2).repeatForever())
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(3).repeatForever())
                 .startAt(DateBuilder.dateOf(8, 0, 0))
-                .endAt(DateBuilder.dateOf(20, 0, 0))
+                .endAt(DateBuilder.dateOf(22, 0, 0))
                 .build();
 
         Set<Trigger> triggers = new HashSet<Trigger>(Arrays.asList(cronTrigger, simpleTrigger));
@@ -92,16 +104,16 @@ public class QuartzTest {
 
         Date startDate = simpleTrigger.getStartTime();
         Date endDate = simpleTrigger.getEndTime();
-        java.util.Calendar startCalendar = Calendar.getInstance();
-        java.util.Calendar endCalendar = Calendar.getInstance();
+        java.util.Calendar startCalendar = java.util.Calendar.getInstance();
+        java.util.Calendar endCalendar = java.util.Calendar.getInstance();
         startCalendar.setTime(startDate);
         endCalendar.setTime(endDate);
-        startCalendar.add(Calendar.DAY_OF_YEAR, 1);
-        endCalendar.add(Calendar.DAY_OF_YEAR, 1);
+        startCalendar.add(java.util.Calendar.DAY_OF_YEAR, 1);
+        endCalendar.add(java.util.Calendar.DAY_OF_YEAR, 1);
 
         Trigger newSimpleTrigger = TriggerBuilder.newTrigger()
                 .withIdentity("simpleTrigger", "group1")
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(2).repeatForever())
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(3).repeatForever())
                 .startAt(startCalendar.getTime())
                 .endAt(endCalendar.getTime())
                 .build();
@@ -112,12 +124,12 @@ public class QuartzTest {
         Thread.sleep(10000);
         System.out.println("重新规划中...");
 
-        startCalendar.add(Calendar.DAY_OF_YEAR, -1);
-        endCalendar.add(Calendar.DAY_OF_YEAR, -1);
+        startCalendar.add(java.util.Calendar.DAY_OF_YEAR, -1);
+        endCalendar.add(java.util.Calendar.DAY_OF_YEAR, -1);
 
         Trigger newSimpleTrigger2 = TriggerBuilder.newTrigger()
                 .withIdentity("simpleTrigger", "group1")
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(2).repeatForever())
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(3).repeatForever())
                 .startAt(startCalendar.getTime())
                 .endAt(endCalendar.getTime())
                 .build();
